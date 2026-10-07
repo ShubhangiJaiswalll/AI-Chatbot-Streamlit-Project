@@ -1,0 +1,83 @@
+const express = require("express");
+const mongoose = require("mongoose");
+const path = require("path");
+require("dotenv").config();
+
+const Message = require("./models/Message");
+
+const app = express();
+
+app.use(express.json());
+app.use(express.static(path.join(__dirname, "public")));
+
+mongoose
+    .connect(process.env.MONGO_URI)
+    .then(() => {
+        console.log("MongoDB Connected Successfully");
+    })
+    .catch((error) => {
+        console.log("MongoDB Connection Error:", error);
+    });
+
+function getBotResponse(message) {
+
+    message = message.toLowerCase();
+
+    if (message.includes("hello") || message.includes("hi")) {
+        return "Hello! 👋 How can I help you?";
+    }
+
+    if (message.includes("name")) {
+        return "I am your AI Chatbot 🤖.";
+    }
+
+    if (message.includes("how are you")) {
+        return "I'm doing great! 😊";
+    }
+
+    if (message.includes("help")) {
+        return "Sure! Ask me anything I can help with.";
+    }
+
+    if (message.includes("thank")) {
+        return "You're welcome! ❤️";
+    }
+
+    if (message.includes("bye")) {
+        return "Goodbye! 👋";
+    }
+
+    return "Sorry, I don't understand that yet. 🤔";
+}
+
+app.post("/chat", async (req, res) => {
+
+    try {
+
+        const userMessage = req.body.message;
+
+        const botResponse = getBotResponse(userMessage);
+
+        const newMessage = new Message({
+            userMessage: userMessage,
+            botResponse: botResponse
+        });
+
+        await newMessage.save();
+
+        res.json({
+            reply: botResponse
+        });
+
+    } catch (error) {
+
+        res.status(500).json({
+            error: "Something went wrong"
+        });
+
+    }
+});
+
+app.listen(3000, () => {
+    console.log("Server running at http://localhost:3000");
+});
